@@ -1,4 +1,4 @@
-// VPC
+//VPC
 
 # Outputs
 output "vpc_id" {
@@ -14,7 +14,7 @@ output "private_subnet_cidr" {
 }
 
 output "nat_gateway_id" {
-  value = var.common_tags["EnableNAT"] == "true" ? aws_nat_gateway.nat[0].id : "NAT Disabled"
+  value = local.tags["EnableNAT"] == "true" ? aws_nat_gateway.nat[0].id : "NAT Disabled"
 }
 
 

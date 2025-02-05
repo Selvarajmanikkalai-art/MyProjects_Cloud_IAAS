@@ -1,25 +1,39 @@
-# Variables
+# Terraform Workspaces
+variable "workspace_env" {
+  default = terraform.workspace
+}
+
+# Load workspace-specific variables
 variable "common_tags" {
-  description = "Common tags applied to all resources"
-  type        = map(string)
+  description = "Common tags per environment"
+  type        = map(map(string))
   default = {
-    Project     = "My-Project"
-    Environment = "Dev"
-    ManagedBy   = "Terraform"
-    EnableNAT   = "true"
+    dev  = { Project = "MyProject-Dev", Environment = "Dev", ManagedBy = "Terraform", EnableNAT = "false" }
+    prod = { Project = "MyProject-Prod", Environment = "Prod", ManagedBy = "Terraform", EnableNAT = "true" }
   }
 }
 
 variable "resource_names" {
-  description = "Resource names"
-  type        = map(string)
+  description = "Resource names per environment"
+  type        = map(map(string))
   default = {
-    vpc             = "My-VPC"
-    public_subnet   = "Public-Subnet"
-    private_subnet  = "Private-Subnet"
-    internet_gw     = "My-Internet-Gateway"
-    nat_gateway     = "My-NAT-Gateway"
-    public_rt       = "Public-Route-Table"
-    private_rt      = "Private-Route-Table"
+    dev = {
+      vpc           = "Dev-VPC"
+      public_subnet = "Dev-Public-Subnet"
+      private_subnet = "Dev-Private-Subnet"
+      internet_gw   = "Dev-Internet-Gateway"
+      nat_gateway   = "Dev-NAT-Gateway"
+      public_rt     = "Dev-Public-Route-Table"
+      private_rt    = "Dev-Private-Route-Table"
+    }
+    prod = {
+      vpc           = "Prod-VPC"
+      public_subnet = "Prod-Public-Subnet"
+      private_subnet = "Prod-Private-Subnet"
+      internet_gw   = "Prod-Internet-Gateway"
+      nat_gateway   = "Prod-NAT-Gateway"
+      public_rt     = "Prod-Public-Route-Table"
+      private_rt    = "Prod-Private-Route-Table"
+    }
   }
 }

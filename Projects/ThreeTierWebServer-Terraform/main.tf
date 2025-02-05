@@ -1,13 +1,12 @@
 # Define VPC
 resource "aws_vpc" "main" {
   cidr_block           = "10.0.0.0/16"
+  enable_dns_support   = true
 
-  tags = merge(var.common_tags, {
-    Name = var.resource_names["vpc"]
-  })
+  tags = merge(local.tags, { Name = local.resources["vpc"] })
 
   lifecycle {
-    prevent_destroy = true  # Prevent accidental deletion
+    prevent_destroy = true
   }
 }
 
@@ -18,9 +17,7 @@ resource "aws_subnet" "public" {
   availability_zone       = "us-east-1a"
   map_public_ip_on_launch = true
 
-  tags = merge(var.common_tags, {
-    Name = var.resource_names["public_subnet"]
-  })
+  tags = merge(local.tags, { Name = local.resources["public_subnet"] })
 }
 
 # Define Private Subnet
@@ -29,18 +26,14 @@ resource "aws_subnet" "private" {
   cidr_block        = cidrsubnet(aws_vpc.main.cidr_block, 8, 1)
   availability_zone = "us-east-1b"
 
-  tags = merge(var.common_tags, {
-    Name = var.resource_names["private_subnet"]
-  })
+  tags = merge(local.tags, { Name = local.resources["private_subnet"] })
 }
 
 # Create an Internet Gateway
 resource "aws_internet_gateway" "gw" {
   vpc_id = aws_vpc.main.id
 
-  tags = merge(var.common_tags, {
-    Name = var.resource_names["internet_gw"]
-  })
+  tags = merge(local.tags, { Name = local.resources["internet_gw"] })
 }
 
 # Create a Public Route Table
@@ -52,9 +45,7 @@ resource "aws_route_table" "public" {
     gateway_id = aws_internet_gateway.gw.id
   }
 
-  tags = merge(var.common_tags, {
-    Name = var.resource_names["public_rt"]
-  })
+  tags = merge(local.tags, { Name = local.resources["public_rt"] })
 }
 
 # Associate Public Subnet with Public Route Table
@@ -67,25 +58,21 @@ resource "aws_route_table_association" "public" {
 resource "aws_eip" "nat_eip" {
   domain = "vpc"
 
-  tags = merge(var.common_tags, {
-    Name = "${var.resource_names["nat_gateway"]}-EIP"
-  })
+  tags = merge(local.tags, { Name = "${local.resources["nat_gateway"]}-EIP" })
 
-  count = var.common_tags["EnableNAT"] == "true" ? 1 : 0
+  count = local.tags["EnableNAT"] == "true" ? 1 : 0
 }
 
 # Conditionally Create NAT Gateway
 resource "aws_nat_gateway" "nat" {
-  allocation_id = var.common_tags["EnableNAT"] == "true" ? aws_eip.nat_eip[0].id : null
+  allocation_id = local.tags["EnableNAT"] == "true" ? aws_eip.nat_eip[0].id : null
   subnet_id     = aws_subnet.public.id
 
-  tags = merge(var.common_tags, {
-    Name = var.resource_names["nat_gateway"]
-  })
+  tags = merge(local.tags, { Name = local.resources["nat_gateway"] })
 
   depends_on = [aws_internet_gateway.gw]
 
-  count = var.common_tags["EnableNAT"] == "true" ? 1 : 0
+  count = local.tags["EnableNAT"] == "true" ? 1 : 0
 }
 
 # Conditionally Create Private Route Table
@@ -94,14 +81,12 @@ resource "aws_route_table" "private" {
 
   route {
     cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = var.common_tags["EnableNAT"] == "true" ? aws_nat_gateway.nat[0].id : null
+    nat_gateway_id = local.tags["EnableNAT"] == "true" ? aws_nat_gateway.nat[0].id : null
   }
 
-  tags = merge(var.common_tags, {
-    Name = var.resource_names["private_rt"]
-  })
+  tags = merge(local.tags, { Name = local.resources["private_rt"] })
 
-  count = var.common_tags["EnableNAT"] == "true" ? 1 : 0
+  count = local.tags["EnableNAT"] == "true" ? 1 : 0
 }
 
 # Conditionally Associate Private Subnet with Private Route Table
@@ -109,6 +94,5 @@ resource "aws_route_table_association" "private" {
   subnet_id      = aws_subnet.private.id
   route_table_id = aws_route_table.private[0].id
 
-  count = var.common_tags["EnableNAT"] == "true" ? 1 : 0
+  count = local.tags["EnableNAT"] == "true" ? 1 : 0
 }
-
