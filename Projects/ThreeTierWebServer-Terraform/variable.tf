@@ -3,7 +3,7 @@ variable "workspace_env" {
   default = terraform.workspace
 }
 
-# Load workspace-specific variables
+# Define common tags per environment
 variable "common_tags" {
   description = "Common tags per environment"
   type        = map(map(string))
@@ -13,6 +13,7 @@ variable "common_tags" {
   }
 }
 
+# Define resource names per environment
 variable "resource_names" {
   description = "Resource names per environment"
   type        = map(map(string))

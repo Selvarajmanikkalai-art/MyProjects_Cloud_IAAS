@@ -1,7 +1,10 @@
+
+
 # Define VPC
 resource "aws_vpc" "main" {
   cidr_block           = "10.0.0.0/16"
   enable_dns_support   = true
+  enable_dns_hostnames = true
 
   tags = merge(local.tags, { Name = local.resources["vpc"] })
 
@@ -60,33 +63,33 @@ resource "aws_eip" "nat_eip" {
 
   tags = merge(local.tags, { Name = "${local.resources["nat_gateway"]}-EIP" })
 
-  count = local.tags["EnableNAT"] == "true" ? 1 : 0
+  count = local.enable_nat ? 1 : 0
 }
 
 # Conditionally Create NAT Gateway
 resource "aws_nat_gateway" "nat" {
-  allocation_id = local.tags["EnableNAT"] == "true" ? aws_eip.nat_eip[0].id : null
+  allocation_id = local.enable_nat ? aws_eip.nat_eip[0].id : null
   subnet_id     = aws_subnet.public.id
 
   tags = merge(local.tags, { Name = local.resources["nat_gateway"] })
 
   depends_on = [aws_internet_gateway.gw]
 
-  count = local.tags["EnableNAT"] == "true" ? 1 : 0
+  count = local.enable_nat ? 1 : 0
 }
 
-# Conditionally Create Private Route Table
+# Conditionally Create Private Route Table if NAT is enabled
 resource "aws_route_table" "private" {
   vpc_id = aws_vpc.main.id
 
   route {
     cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = local.tags["EnableNAT"] == "true" ? aws_nat_gateway.nat[0].id : null
+    nat_gateway_id = local.enable_nat ? aws_nat_gateway.nat[0].id : null
   }
 
   tags = merge(local.tags, { Name = local.resources["private_rt"] })
 
-  count = local.tags["EnableNAT"] == "true" ? 1 : 0
+  count = local.enable_nat ? 1 : 0
 }
 
 # Conditionally Associate Private Subnet with Private Route Table
@@ -94,5 +97,6 @@ resource "aws_route_table_association" "private" {
   subnet_id      = aws_subnet.private.id
   route_table_id = aws_route_table.private[0].id
 
-  count = local.tags["EnableNAT"] == "true" ? 1 : 0
+  count = local.enable_nat ? 1 : 0
 }
+
