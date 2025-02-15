@@ -4,7 +4,6 @@
 resource "aws_vpc" "main" {
   cidr_block           = "10.0.0.0/16"
   enable_dns_support   = true
-  enable_dns_hostnames = true
 
   tags = merge(local.tags, { Name = local.resources["vpc"] })
 
@@ -57,25 +56,24 @@ resource "aws_route_table_association" "public" {
   route_table_id = aws_route_table.public.id
 }
 
+
 # Conditionally Create an Elastic IP for NAT Gateway
 resource "aws_eip" "nat_eip" {
   domain = "vpc"
-
-  tags = merge(local.tags, { Name = "${local.resources["nat_gateway"]}-EIP" })
-
-  count = local.enable_nat ? 1 : 0
+  tags   = merge(local.tags, { Name = "${local.resources["aws_nat_gateway"]}-EIP" })
+  count = local.enable_nat ? 1 : 0 # Create NAT Gateway only if enabled
 }
+
+
 
 # Conditionally Create NAT Gateway
 resource "aws_nat_gateway" "nat" {
-  allocation_id = local.enable_nat ? aws_eip.nat_eip[0].id : null
+  count = var.EnableNAT[var.workspace_env] ? 1 : 0
+
+  allocation_id = length(aws_eip.nat_eip) > 0 ? aws_eip.nat_eip[0].id : null
   subnet_id     = aws_subnet.public.id
-
-  tags = merge(local.tags, { Name = local.resources["nat_gateway"] })
-
-  depends_on = [aws_internet_gateway.gw]
-
-  count = local.enable_nat ? 1 : 0
+  tags          = merge(local.tags, { Name = lookup(local.resources, "aws_nat_gateway", "default-nat-name") })
+  depends_on    = [aws_internet_gateway.gw]
 }
 
 # Conditionally Create Private Route Table if NAT is enabled
