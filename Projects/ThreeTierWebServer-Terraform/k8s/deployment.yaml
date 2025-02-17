@@ -1,0 +1,20 @@
+apiversion: apps/V1
+kind: deployment
+metadata: 
+  name: hello-k8s
+spec: 
+  selector:
+    matchLabels: 
+      name: hello-k8s
+  template:
+    metadata: 
+      labels: 
+        name: hello-k8s
+    spec: 
+      containers: 
+        -- name: my_app
+        image: Ubuntu:ubuntu/latest
+        ports: 
+          -- containerport: 8080
+
+            
